@@ -1,0 +1,9 @@
+bin/
+
+.vscode/
+
+tests/
+
+out/
+
+.clang-format
