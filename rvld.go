@@ -33,7 +33,13 @@ func main() {
 		utils.Fatal("unknown emulation type.")
 	}
 
-	fmt.Printf("%v\n", remaining)
+	linker.ReadInputFiles(ctx, remaining)
+
+	println(len(ctx.Objs))
+
+	for _, obj := range ctx.Objs {
+		println(obj.File.Name)
+	}
 }
 
 func ParseArgs(ctx *linker.Context) []string {
@@ -106,7 +112,17 @@ func ParseArgs(ctx *linker.Context) []string {
 			ctx.Args.LibraryPaths = append(ctx.Args.LibraryPaths, arg)
 		} else if readArg("l") {
 			remaining = append(remaining, "-l"+arg)
-		} else if readArg("sysroot") || readFlag("static") || readArg("plugin") || readArg("plugin-opt") || readFlag("as-needed") || readFlag("start-group") || readFlag("end-group") || readArg("hash-style") || readArg("build-id") || readFlag("s") || readFlag("no-relax") {
+		} else if readArg("sysroot") ||
+			readFlag("static") ||
+			readArg("plugin") ||
+			readArg("plugin-opt") ||
+			readFlag("as-needed") ||
+			readFlag("start-group") ||
+			readFlag("end-group") ||
+			readArg("hash-style") ||
+			readArg("build-id") ||
+			readFlag("s") ||
+			readFlag("no-relax") {
 			// Ignored
 		} else {
 			if args[0][0] == '-' {

@@ -5,6 +5,8 @@ import (
 	"debug/elf"
 	"fmt"
 	"rvld/pkg/utils"
+	"strconv"
+	"strings"
 	"unsafe"
 )
 
@@ -47,6 +49,16 @@ type Sym64 struct {
 	Size  uint64 /* Size of associated object. */
 }
 
+type ArHeadher struct {
+	Name [16]byte
+	Date [12]byte
+	Uid  [6]byte
+	Gid  [6]byte
+	Mode [8]byte
+	Size [10]byte
+	Fmag [2]byte
+}
+
 type InputFile struct {
 	File        *File
 	Sections    []SectionHeader
@@ -59,6 +71,7 @@ type InputFile struct {
 const ELFHeaderSize = unsafe.Sizeof(Header64{})
 const SectionHeaderSize = unsafe.Sizeof(SectionHeader{})
 const SymbolSize = unsafe.Sizeof(Sym64{})
+const ArHeaderSize = unsafe.Sizeof(ArHeadher{})
 
 func NewInputFile(file *File) InputFile {
 	elfFile := InputFile{File: file}
@@ -143,4 +156,40 @@ func (file *InputFile) FillUpSymbols(s *SectionHeader) {
 		symContents = symContents[SymbolSize:]
 		symNumber--
 	}
+}
+
+// ArHeader methods
+func (a *ArHeadher) GetSize() int {
+	size, err := strconv.Atoi(strings.TrimSpace(string(a.Size[:])))
+	utils.MustNo(err)
+	return size
+}
+
+func (a *ArHeadher) HasPrefix(s string) bool {
+	return strings.HasPrefix(string(a.Name[:]), s)
+}
+
+func (a *ArHeadher) IsStrtab() bool {
+	return a.HasPrefix("// ")
+}
+
+func (a *ArHeadher) IsSymtab() bool {
+	return a.HasPrefix("/ ") || a.HasPrefix("/SYM64/ ")
+}
+
+func (a *ArHeadher) ReadName(strTab []byte) string {
+	// if name is too long, it will store in string table
+	if a.HasPrefix("/") {
+		start, err := strconv.Atoi(strings.TrimSpace(string(a.Name[1:])))
+		utils.MustNo(err)
+
+		end := start + bytes.Index(strTab[start:], []byte("/\n"))
+		return string(strTab[start:end])
+	}
+
+	// else name will store in "Name"
+	nameEnd := bytes.Index(a.Name[:], []byte("/"))
+	utils.Assert(nameEnd != -1)
+
+	return string(a.Name[:nameEnd])
 }

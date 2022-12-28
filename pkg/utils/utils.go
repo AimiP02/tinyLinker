@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 )
 
 func Fatal(v any) {
@@ -34,4 +35,12 @@ func Assert(condition bool) {
 	if !condition {
 		Fatal("Assert Failed")
 	}
+}
+
+func RemovePrefix(s, prefix string) (string, bool) {
+	if strings.HasPrefix(s, prefix) {
+		s = strings.TrimPrefix(s, prefix)
+		return s, true
+	}
+	return s, false
 }
