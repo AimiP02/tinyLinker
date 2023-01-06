@@ -60,12 +60,15 @@ type ArHeadher struct {
 }
 
 type InputFile struct {
-	File        *File
-	Sections    []SectionHeader
-	FirstGlobal int64
-	SymTable    []Sym64
-	SymStrTable []byte
-	StrTable    []byte
+	File         *File
+	Sections     []SectionHeader
+	FirstGlobal  int
+	SymTable     []Sym64
+	SymStrTable  []byte
+	StrTable     []byte
+	IsAlive      bool
+	Symbols      []*Symbol
+	LocalSymbols []Symbol
 }
 
 const ELFHeaderSize = unsafe.Sizeof(Header64{})
@@ -73,6 +76,7 @@ const SectionHeaderSize = unsafe.Sizeof(SectionHeader{})
 const SymbolSize = unsafe.Sizeof(Sym64{})
 const ArHeaderSize = unsafe.Sizeof(ArHeadher{})
 
+// InputFile method
 func NewInputFile(file *File) InputFile {
 	elfFile := InputFile{File: file}
 
@@ -192,4 +196,13 @@ func (a *ArHeadher) ReadName(strTab []byte) string {
 	utils.Assert(nameEnd != -1)
 
 	return string(a.Name[:nameEnd])
+}
+
+// Sym64 methods
+func (s *Sym64) IsAbs() bool {
+	return s.Shndx == uint16(elf.SHN_ABS)
+}
+
+func (s *Sym64) IsUndef() bool {
+	return s.Shndx == uint16(elf.SHN_UNDEF)
 }

@@ -21,21 +21,25 @@ func ReadFile(ctx *Context, file *File) {
 	switch ft {
 	case FileTypeObject:
 		// Todo ...
-		ctx.Objs = append(ctx.Objs, CreateObjectFile(file))
+		ctx.Objs = append(ctx.Objs, CreateObjectFile(ctx, file, false))
 	case FileTypeArchive:
 		for _, child := range ReadArchiveMembers(file) {
 			utils.Assert(GetFileType(child.Contents) == FileTypeObject)
-			ctx.Objs = append(ctx.Objs, CreateObjectFile(child))
+			ctx.Objs = append(ctx.Objs, CreateObjectFile(ctx, child, true))
 		}
 	default:
 		utils.Fatal("unknown file type")
 	}
 }
 
-func CreateObjectFile(file *File) *ObjectFile {
-	obj := NewObjectFile(file)
+func CreateObjectFile(ctx *Context, file *File, inLib bool) *ObjectFile {
+	mt := GetMachineTypeFromContext(file.Contents)
+	if mt != ctx.Args.Emulation {
+		utils.Fatal("incompatible file type")
+	}
 
-	obj.Parse()
+	obj := NewObjectFile(file, !inLib)
+	obj.Parse(ctx)
 
 	return obj
 }

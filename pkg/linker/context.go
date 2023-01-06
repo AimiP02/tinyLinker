@@ -7,12 +7,17 @@ type ContextArgs struct {
 }
 
 type Context struct {
-	Args ContextArgs
-	Objs []*ObjectFile
+	Args      ContextArgs
+	Objs      []*ObjectFile
+	SymbolMap map[string]*Symbol
 }
 
 func NewContext() *Context {
 	return &Context{
-		Args: ContextArgs{Output: "a.out"},
+		Args: ContextArgs{
+			Output:    "a.out",
+			Emulation: MachineTypeNone,
+		},
+		SymbolMap: make(map[string]*Symbol),
 	}
 }
