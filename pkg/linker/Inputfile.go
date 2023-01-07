@@ -151,15 +151,7 @@ func (file *InputFile) FindSection(type_ uint32) *SectionHeader {
 
 func (file *InputFile) FillUpSymbols(s *SectionHeader) {
 	symContents := file.GetBytesFromShdr(s)
-	symNumber := len(symContents) / int(SymbolSize)
-
-	file.SymTable = make([]Sym64, 0, symNumber)
-
-	for symNumber > 0 {
-		file.SymTable = append(file.SymTable, utils.Read[Sym64](symContents))
-		symContents = symContents[SymbolSize:]
-		symNumber--
-	}
+	file.SymTable = utils.ReadSlice[Sym64](symContents, int(SymbolSize))
 }
 
 // ArHeader methods
@@ -205,4 +197,8 @@ func (s *Sym64) IsAbs() bool {
 
 func (s *Sym64) IsUndef() bool {
 	return s.Shndx == uint16(elf.SHN_UNDEF)
+}
+
+func (s *Sym64) IsCommon() bool {
+	return s.Shndx == uint16(elf.SHN_COMMON)
 }

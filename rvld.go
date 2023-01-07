@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"rvld/pkg/linker"
 	"rvld/pkg/utils"
 	"strings"
@@ -35,6 +36,7 @@ func main() {
 
 	linker.ReadInputFiles(ctx, remaining)
 	linker.ResolveSymbols(ctx)
+	linker.RegisterSetionPieces(ctx)
 
 	for _, obj := range ctx.Objs {
 		if obj.File.Name == "out/test/hello/a.o" {
@@ -44,6 +46,11 @@ func main() {
 				}
 			}
 		}
+	}
+
+	// Clean path
+	for i, path := range ctx.Args.LibraryPaths {
+		ctx.Args.LibraryPaths[i] = filepath.Clean(path)
 	}
 }
 

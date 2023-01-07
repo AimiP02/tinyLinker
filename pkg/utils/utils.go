@@ -57,3 +57,26 @@ func RemoveIf[T any](elems []T, condition func(T) bool) []T {
 
 	return elems[:i]
 }
+
+func ReadSlice[T any](data []byte, sz int) []T {
+	nums := len(data) / sz
+	res := make([]T, 0, nums)
+
+	for nums > 0 {
+		res = append(res, Read[T](data))
+		data = data[sz:]
+		nums--
+	}
+
+	return res
+}
+
+func AllZeros(bs []byte) bool {
+	b := byte(0)
+
+	for _, s := range bs {
+		b |= s
+	}
+
+	return b == 0
+}
