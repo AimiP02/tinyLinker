@@ -19,6 +19,7 @@ $(TESTS):
 	@printf '\e[32mOK\e[0m\n'
 
 clean:
-	rm -rf tests/out/* bin/*
+	go clean
+	rm -rf out/ tests/out/* bin/* ld
 
 .PHONY: build clean test $(TESTS)

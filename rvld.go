@@ -34,24 +34,42 @@ func main() {
 		utils.Fatal("unknown emulation type.")
 	}
 
+	// Initialization
 	linker.ReadInputFiles(ctx, remaining)
+	linker.CreateInternalFile(ctx)
 	linker.ResolveSymbols(ctx)
 	linker.RegisterSetionPieces(ctx)
+	linker.CreateSyntheticSections(ctx)
+	linker.BinSections(ctx)
+	ctx.Chunks = append(ctx.Chunks, linker.CollectOutputSections(ctx)...)
+	linker.ComputeSectionsSize(ctx)
+	linker.SortOutputSections(ctx)
 
-	for _, obj := range ctx.Objs {
-		if obj.File.Name == "out/test/hello/a.o" {
-			for _, sym := range obj.Symbols {
-				if sym.Name == "puts" {
-					println(sym.File.File.Parent.Name)
-				}
-			}
-		}
+	for _, chunk := range ctx.Chunks {
+		chunk.UpdateShdr(ctx)
 	}
+
+	fileSize := linker.SetOutputSectionOffsets(ctx)
+
+	println(fileSize)
+
+	ctx.Buf = make([]byte, fileSize)
+
+	file, err := os.OpenFile(ctx.Args.Output, os.O_RDWR|os.O_CREATE, 0777)
+	utils.MustNo(err)
+
+	for _, chunk := range ctx.Chunks {
+		chunk.CopyBuf(ctx)
+	}
+
+	_, err = file.Write(ctx.Buf)
+	utils.MustNo(err)
 
 	// Clean path
 	for i, path := range ctx.Args.LibraryPaths {
 		ctx.Args.LibraryPaths[i] = filepath.Clean(path)
 	}
+
 }
 
 func ParseArgs(ctx *linker.Context) []string {

@@ -31,7 +31,7 @@ func (o *ObjectFile) Parse(ctx *Context) {
 	}
 
 	// initialize Sections
-	o.InitializeSections()
+	o.InitializeSections(ctx)
 	o.InitializeSymbols(ctx)
 
 	// initialize Mergeable Sections
@@ -39,7 +39,7 @@ func (o *ObjectFile) Parse(ctx *Context) {
 
 }
 
-func (o *ObjectFile) InitializeSections() {
+func (o *ObjectFile) InitializeSections(ctx *Context) {
 	o.Sections = make([]*InputSection, len(o.InputFile.Sections))
 
 	for i := 0; i < len(o.InputFile.Sections); i++ {
@@ -50,7 +50,8 @@ func (o *ObjectFile) InitializeSections() {
 		case elf.SHT_SYMTAB_SHNDX:
 			o.FillUpSymtabShndxSec(shdr)
 		default:
-			o.Sections[i] = NewInputSection(o, uint32(i))
+			name := GetNameFromTable(o.InputFile.StrTable, shdr.Name)
+			o.Sections[i] = NewInputSection(ctx, name, o, uint32(i))
 		}
 	}
 }
@@ -136,7 +137,7 @@ func (o *ObjectFile) GetSecion(esym *Sym64, idx int) *InputSection {
 	return o.Sections[o.GetShndx(esym, idx)]
 }
 
-func (o *ObjectFile) MarkLiveObjects(ctx *Context, feeder func(*ObjectFile)) {
+func (o *ObjectFile) MarkLiveObjects(feeder func(*ObjectFile)) {
 	utils.Assert(o.IsAlive)
 
 	for i := o.FirstGlobal; i < len(o.InputFile.SymTable); i++ {

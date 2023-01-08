@@ -17,3 +17,4 @@ int main() {
 EOF
 
 $CC -B. -static "$path_name"/a.o -o "$path_name"/out
+file "$path_name"/out | grep -q "ELF"

@@ -71,6 +71,13 @@ func ReadSlice[T any](data []byte, sz int) []T {
 	return res
 }
 
+func Write[T any](data []byte, e T) {
+	buf := &bytes.Buffer{}
+	err := binary.Write(buf, binary.LittleEndian, e)
+	MustNo(err)
+	copy(data, buf.Bytes())
+}
+
 func AllZeros(bs []byte) bool {
 	b := byte(0)
 
@@ -79,4 +86,12 @@ func AllZeros(bs []byte) bool {
 	}
 
 	return b == 0
+}
+
+func AlignTo(val, align uint64) uint64 {
+	if align == 0 {
+		return val
+	}
+
+	return (val + align - 1) &^ (align - 1)
 }

@@ -11,6 +11,16 @@ type Context struct {
 	Objs           []*ObjectFile
 	SymbolMap      map[string]*Symbol
 	MergedSections []*MergedSection
+	InternalObj    *ObjectFile
+	InternalEsyms  []Sym64
+
+	Ehdr *OutputEhdr
+	Shdr *OutputShdr
+
+	OutputSections []*OutputSection
+
+	Chunks []Chunker
+	Buf    []byte
 }
 
 func NewContext() *Context {

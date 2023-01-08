@@ -13,9 +13,12 @@ type InputSection struct {
 	ShSize   uint32
 	IsAlive  bool
 	P2Align  uint8
+	Offset   uint32
+
+	OutputSection *OutputSection
 }
 
-func NewInputSection(file *ObjectFile, shndx uint32) *InputSection {
+func NewInputSection(ctx *Context, name string, file *ObjectFile, shndx uint32) *InputSection {
 	s := &InputSection{
 		File:    file,
 		Shndx:   shndx,
@@ -39,6 +42,8 @@ func NewInputSection(file *ObjectFile, shndx uint32) *InputSection {
 	}
 	s.P2Align = ToP2Align(shdr.Addralign)
 
+	s.OutputSection = GetOutputSection(ctx, name, shdr.Type, shdr.Flags)
+
 	return s
 }
 
@@ -49,4 +54,16 @@ func (i *InputSection) Shdr() *SectionHeader {
 
 func (i *InputSection) Name() string {
 	return GetNameFromTable(i.File.StrTable, i.Shdr().Name)
+}
+
+func (i *InputSection) WriteTo(buf []byte) {
+	if i.Shdr().Type == uint32(elf.SHT_NOBITS) || i.ShSize == 0 {
+		return
+	}
+
+	i.CopyContents(buf)
+}
+
+func (i *InputSection) CopyContents(buf []byte) {
+	copy(buf, i.Contents)
 }

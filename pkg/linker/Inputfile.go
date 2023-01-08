@@ -27,6 +27,17 @@ type Header64 struct {
 	Shstrndx  uint16   /* Section name strings section. */
 }
 
+type ProgramHeader struct {
+	Type     uint32
+	Flags    uint32
+	Offset   uint32
+	VAddr    uint32
+	PAddr    uint32
+	FileSize uint32
+	MemSize  uint32
+	Align    uint64
+}
+
 type SectionHeader struct {
 	Name      uint32
 	Type      uint32
@@ -71,7 +82,10 @@ type InputFile struct {
 	LocalSymbols []Symbol
 }
 
+const IMAGE_BASE uint64 = 0x200000
+const EF_RISCV_RVC uint32 = 1
 const ELFHeaderSize = unsafe.Sizeof(Header64{})
+const ProgramHeaderSize = unsafe.Sizeof(ProgramHeader{})
 const SectionHeaderSize = unsafe.Sizeof(SectionHeader{})
 const SymbolSize = unsafe.Sizeof(Sym64{})
 const ArHeaderSize = unsafe.Sizeof(ArHeadher{})
@@ -147,6 +161,10 @@ func (file *InputFile) FindSection(type_ uint32) *SectionHeader {
 	}
 
 	return nil
+}
+
+func (file *InputFile) GetEhdr() Header64 {
+	return utils.Read[Header64](file.File.Contents)
 }
 
 func (file *InputFile) FillUpSymbols(s *SectionHeader) {
