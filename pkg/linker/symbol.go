@@ -2,6 +2,10 @@ package linker
 
 import "rvld/pkg/utils"
 
+const (
+	NeedsGotTp uint32 = 1 << 0
+)
+
 type Symbol struct {
 	File            *ObjectFile
 	InputSection    *InputSection
@@ -9,11 +13,14 @@ type Symbol struct {
 	Name            string
 	Value           uint64
 	SymIdx          int32
+	GotTpIdx        int32
+	Flags           uint32
 }
 
 func NewSymbol(name string) *Symbol {
 	s := &Symbol{
-		Name: name,
+		Name:   name,
+		SymIdx: -1,
 	}
 
 	return s
@@ -46,4 +53,20 @@ func (s *Symbol) Clear() {
 	s.File = nil
 	s.InputSection = nil
 	s.SymIdx = -1
+}
+
+func (s *Symbol) GetAddr() uint64 {
+	if s.SectionFragment != nil {
+		return s.SectionFragment.GetAddr() + s.Value
+	}
+
+	if s.InputSection != nil {
+		return s.InputSection.GetAddr() + s.Value
+	}
+
+	return s.Value
+}
+
+func (s *Symbol) GetGotTpAddr(ctx *Context) uint64 {
+	return ctx.Got.Shdr.Addr + uint64(s.GotTpIdx)*8
 }

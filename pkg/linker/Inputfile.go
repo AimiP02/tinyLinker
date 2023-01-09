@@ -30,11 +30,11 @@ type Header64 struct {
 type ProgramHeader struct {
 	Type     uint32
 	Flags    uint32
-	Offset   uint32
-	VAddr    uint32
-	PAddr    uint32
-	FileSize uint32
-	MemSize  uint32
+	Offset   uint64
+	VAddr    uint64
+	PAddr    uint64
+	FileSize uint64
+	MemSize  uint64
 	Align    uint64
 }
 
@@ -82,6 +82,14 @@ type InputFile struct {
 	LocalSymbols []Symbol
 }
 
+type Rela struct {
+	Offset uint64
+	Type   uint32
+	Sym    uint32
+	Addend int64
+}
+
+const PageSize = 4096
 const IMAGE_BASE uint64 = 0x200000
 const EF_RISCV_RVC uint32 = 1
 const ELFHeaderSize = unsafe.Sizeof(Header64{})
@@ -89,6 +97,7 @@ const ProgramHeaderSize = unsafe.Sizeof(ProgramHeader{})
 const SectionHeaderSize = unsafe.Sizeof(SectionHeader{})
 const SymbolSize = unsafe.Sizeof(Sym64{})
 const ArHeaderSize = unsafe.Sizeof(ArHeadher{})
+const RelaSize = unsafe.Sizeof(Rela{})
 
 // InputFile method
 func NewInputFile(file *File) InputFile {

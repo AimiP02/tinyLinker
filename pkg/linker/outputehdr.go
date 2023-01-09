@@ -36,14 +36,13 @@ func (o *OutputEhdr) CopyBuf(ctx *Context) {
 	ehdr.Machine = uint16(elf.EM_RISCV)
 	ehdr.Version = uint32(elf.EV_CURRENT)
 	ehdr.Entry = GetEntryAddress(ctx)
-	//TODO
+	ehdr.Phoff = ctx.Phdr.Shdr.Offset
 	ehdr.Shoff = ctx.Shdr.Shdr.Offset
 	ehdr.Ehsize = uint16(ELFHeaderSize)
 	ehdr.Phentsize = uint16(ProgramHeaderSize)
-	//TODO
+	ehdr.Phnum = uint16(ctx.Phdr.Shdr.Size) / uint16(ProgramHeaderSize)
 	ehdr.Shentsize = uint16(SectionHeaderSize)
 	ehdr.Shnum = uint16(ctx.Shdr.Shdr.Size) / uint16(SectionHeaderSize)
-	//TODO
 
 	buf := &bytes.Buffer{}
 	err := binary.Write(buf, binary.LittleEndian, ehdr)
@@ -65,9 +64,6 @@ func GetFlags(ctx *Context) uint32 {
 	flags := ctx.Objs[0].GetEhdr().Flags
 
 	for _, obj := range ctx.Objs[1:] {
-		if obj == ctx.InternalObj {
-			continue
-		}
 		if obj.GetEhdr().Flags&EF_RISCV_RVC != 0 {
 			flags |= EF_RISCV_RVC
 			break

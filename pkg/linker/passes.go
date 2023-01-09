@@ -7,19 +7,6 @@ import (
 	"sort"
 )
 
-func CreateInternalFile(ctx *Context) {
-	obj := &ObjectFile{}
-	ctx.InternalObj = obj
-	ctx.Objs = append(ctx.Objs, obj)
-
-	ctx.InternalEsyms = make([]Sym64, 1)
-
-	obj.Symbols = append(obj.Symbols, NewSymbol(""))
-	obj.FirstGlobal = 1
-	obj.IsAlive = true
-	obj.InputFile.SymTable = ctx.InternalEsyms
-}
-
 func ResolveSymbols(ctx *Context) {
 	for _, file := range ctx.Objs {
 		file.ResolveSymbols()
@@ -33,7 +20,7 @@ func ResolveSymbols(ctx *Context) {
 		}
 	}
 
-	ctx.Objs = utils.RemoveIf[*ObjectFile](ctx.Objs, func(file *ObjectFile) bool {
+	ctx.Objs = utils.RemoveIf(ctx.Objs, func(file *ObjectFile) bool {
 		return !file.IsAlive
 	})
 
@@ -77,7 +64,9 @@ func CreateSyntheticSections(ctx *Context) {
 	}
 
 	ctx.Ehdr = push(NewOutputEhdr()).(*OutputEhdr)
+	ctx.Phdr = push(NewOutputPhdr()).(*OutputPhdr)
 	ctx.Shdr = push(NewOutputShdr()).(*OutputShdr)
+	ctx.Got = push(NewGotSection()).(*GotSection)
 }
 
 func SetOutputSectionOffsets(ctx *Context) uint64 {
@@ -119,6 +108,7 @@ func SetOutputSectionOffsets(ctx *Context) uint64 {
 		fileoff += shdr.Size
 	}
 
+	ctx.Phdr.UpdateShdr(ctx)
 	return fileoff
 }
 
@@ -142,11 +132,19 @@ func BinSections(ctx *Context) {
 
 func CollectOutputSections(ctx *Context) []Chunker {
 	osecs := make([]Chunker, 0)
+
 	for _, osec := range ctx.OutputSections {
 		if len(osec.Members) > 0 {
 			osecs = append(osecs, osec)
 		}
 	}
+
+	for _, osec := range ctx.MergedSections {
+		if osec.Shdr.Size > 0 {
+			osecs = append(osecs, osec)
+		}
+	}
+
 	return osecs
 }
 
@@ -177,6 +175,9 @@ func SortOutputSections(ctx *Context) {
 		if chunk == ctx.Ehdr {
 			return 0
 		}
+		if chunk == ctx.Phdr {
+			return 1
+		}
 		if typ == uint32(elf.SHT_NOTE) {
 			return 2
 		}
@@ -205,6 +206,35 @@ func SortOutputSections(ctx *Context) {
 	sort.SliceStable(ctx.Chunks, func(i, j int) bool {
 		return rank(ctx.Chunks[i]) < rank(ctx.Chunks[j])
 	})
+}
+
+func ComputeMergedSectionSizes(ctx *Context) {
+	for _, osec := range ctx.MergedSections {
+		osec.AssginOffsets()
+	}
+}
+
+func ScanRelocations(ctx *Context) {
+	for _, file := range ctx.Objs {
+		file.ScanRelocations()
+	}
+
+	syms := make([]*Symbol, 0)
+	for _, file := range ctx.Objs {
+		for _, sym := range file.Symbols {
+			if sym.File == file && sym.Flags != 0 {
+				syms = append(syms, sym)
+			}
+		}
+	}
+
+	for _, sym := range syms {
+		if sym.Flags&NeedsGotTp != 0 {
+			ctx.Got.AddGotTpSymbol(sym)
+		}
+		sym.Flags = 0
+	}
+
 }
 
 func isTbss(chunk Chunker) bool {

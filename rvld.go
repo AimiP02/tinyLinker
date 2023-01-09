@@ -36,12 +36,13 @@ func main() {
 
 	// Initialization
 	linker.ReadInputFiles(ctx, remaining)
-	linker.CreateInternalFile(ctx)
 	linker.ResolveSymbols(ctx)
 	linker.RegisterSetionPieces(ctx)
+	linker.ComputeMergedSectionSizes(ctx)
 	linker.CreateSyntheticSections(ctx)
 	linker.BinSections(ctx)
 	ctx.Chunks = append(ctx.Chunks, linker.CollectOutputSections(ctx)...)
+	linker.ScanRelocations(ctx)
 	linker.ComputeSectionsSize(ctx)
 	linker.SortOutputSections(ctx)
 
@@ -50,9 +51,6 @@ func main() {
 	}
 
 	fileSize := linker.SetOutputSectionOffsets(ctx)
-
-	println(fileSize)
-
 	ctx.Buf = make([]byte, fileSize)
 
 	file, err := os.OpenFile(ctx.Args.Output, os.O_RDWR|os.O_CREATE, 0777)

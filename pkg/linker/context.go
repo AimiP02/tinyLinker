@@ -11,11 +11,15 @@ type Context struct {
 	Objs           []*ObjectFile
 	SymbolMap      map[string]*Symbol
 	MergedSections []*MergedSection
-	InternalObj    *ObjectFile
-	InternalEsyms  []Sym64
+	// InternalObj    *ObjectFile
+	// InternalEsyms  []Sym64
 
 	Ehdr *OutputEhdr
 	Shdr *OutputShdr
+	Phdr *OutputPhdr
+	Got  *GotSection
+
+	TpAddr uint64
 
 	OutputSections []*OutputSection
 
