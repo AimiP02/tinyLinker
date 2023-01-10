@@ -55,7 +55,7 @@ func NewInputSection(ctx *Context, name string, file *ObjectFile, shndx uint32) 
 }
 
 func (i *InputSection) Shdr() *SectionHeader {
-	utils.Assert(i.Shndx < uint32(len(i.File.Sections)))
+	utils.Assert(i.Shndx < uint32(len(i.File.InputFile.Sections)))
 	return &i.File.InputFile.Sections[i.Shndx]
 }
 
@@ -209,7 +209,7 @@ func stype(val uint32) uint32 {
 
 func btype(val uint32) uint32 {
 	return utils.Bit(val, 12)<<31 | utils.Bits(val, 10, 5)<<25 |
-		utils.Bit(val, 11)<<20 | utils.Bits(val, 4, 1)<<8
+		utils.Bits(val, 4, 1)<<8 | utils.Bit(val, 11)<<7
 }
 
 func utype(val uint32) uint32 {
@@ -241,7 +241,7 @@ func WriteItype(loc []byte, val uint32) {
 
 func WriteStype(loc []byte, val uint32) {
 	mask := uint32(0b000000_11111_11111_111_00000_1111111)
-	utils.Write[uint32](loc, (utils.Read[uint32](loc)&mask)|btype(val))
+	utils.Write[uint32](loc, (utils.Read[uint32](loc)&mask)|stype(val))
 }
 
 func WriteBtype(loc []byte, val uint32) {
@@ -255,7 +255,7 @@ func WriteUtype(loc []byte, val uint32) {
 }
 
 func WriteJtype(loc []byte, val uint32) {
-	mask := uint32(0b000000_00000_11111_111_11111_1111111)
+	mask := uint32(0b000000_00000_00000_000_11111_1111111)
 	utils.Write[uint32](loc, (utils.Read[uint32](loc)&mask)|jtype(val))
 }
 
@@ -263,3 +263,4 @@ func SetRs1(loc []byte, rs1 uint32) {
 	utils.Write[uint32](loc, utils.Read[uint32](loc)&(0b111111_11111_00000_111_11111_1111111))
 	utils.Write[uint32](loc, utils.Read[uint32](loc)|(rs1<<15))
 }
+
