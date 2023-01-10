@@ -4,7 +4,7 @@ TESTS := $(wildcard tests/*.sh)
 
 build:
 	@go build -ldflags "-X main.version=${VERSION}-${COMMIT_ID}"
-	@ln -sf ./bin/rvld ld
+	@ln -sf rvld ld
 
 test: build
 	@CC="riscv64-linux-gnu-gcc" \
@@ -18,6 +18,6 @@ $(TESTS):
 
 clean:
 	go clean
-	rm -rf out/ tests/out/* bin/* ld
+	rm -rf out/ bin/* ld
 
 .PHONY: build clean test $(TESTS)
